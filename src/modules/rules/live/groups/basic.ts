@@ -16,7 +16,6 @@ export const liveBasicItems: Item[] = [
         type: 'switch',
         id: 'live-page-default-skin',
         name: '禁用 播放器皮肤',
-        noStyle: true,
         enableFn: () => {
             const style = document.querySelector<HTMLStyleElement>('head #skin-css')
             if (style) {
