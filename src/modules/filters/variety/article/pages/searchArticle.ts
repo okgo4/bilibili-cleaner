@@ -4,7 +4,7 @@ import { Group } from '@/types/collection'
 import { ContextMenuTargetHandler, FilterContextMenu, IMainFilter, SelectorResult, SubFilterPair } from '@/types/filter'
 import { logger } from '@/utils/logger'
 import { GM_getValue, GM_setValue } from '$'
-import { orderedUniq, showEle } from '@/utils/tool'
+import { orderedUniq, showEle, waitForEle } from '@/utils/tool'
 import { ArticleAuthorFilter, ArticleAuthorKeywordFilter } from '../subFilters/black'
 import { ArticleAuthorKeywordWhiteFilter, ArticleAuthorWhiteFilter } from '../subFilters/white'
 
@@ -31,8 +31,6 @@ const GM_KEYS = {
     },
 }
 
-const isArticleUrl = () => location.href.includes('search.bilibili.com/article')
-
 const selectorFns = {
     author: (card: HTMLElement): SelectorResult => {
         return card.querySelector('.atc-author .lh_xs')?.textContent?.trim()
@@ -41,9 +39,6 @@ const selectorFns = {
 
 class ArticleFilterSearch implements IMainFilter {
     target: HTMLElement | undefined
-    private mediaObserver: MutationObserver | null = null
-    private watchTimer: ReturnType<typeof setTimeout> | null = null
-
     articleAuthorFilter = new ArticleAuthorFilter()
     articleAuthorKeywordFilter = new ArticleAuthorKeywordFilter()
     articleAuthorWhiteFilter = new ArticleAuthorWhiteFilter()
@@ -63,54 +58,14 @@ class ArticleFilterSearch implements IMainFilter {
         this.articleAuthorKeywordWhiteFilter.setParam(keywordWhitelist)
     }
 
-    /** 查找 div.media-list 并建立观察 */
-    private setupMediaList() {
-        if (!isArticleUrl()) {
-            this.teardown()
-            return
-        }
-        const mediaList = document.querySelector<HTMLElement>('div.media-list')
-        if (!mediaList) {
-            // 还没渲染，轮询等待
-            if (!this.watchTimer) {
-                this.watchTimer = setTimeout(() => {
-                    this.watchTimer = null
-                    this.setupMediaList()
-                }, 500)
-            }
-            return
-        }
-
-        if (this.target === mediaList) {
-            this.checkFilter()
-            return
-        }
-
-        logger.log('ArticleFilterSearch div.media-list found')
-        this.mediaObserver?.disconnect()
-        this.target = mediaList
-        this.mediaObserver = new MutationObserver(() => {
-            this.checkFilter()
-        })
-        this.mediaObserver.observe(this.target, { childList: true, subtree: true })
-        this.checkFilter()
-    }
-
-    /** 取消观察和轮询 */
-    private teardown() {
-        if (this.watchTimer) {
-            clearTimeout(this.watchTimer)
-            this.watchTimer = null
-        }
-        this.mediaObserver?.disconnect()
-        this.mediaObserver = null
-        this.target = undefined
-        document.querySelectorAll<HTMLElement>(`[${config.filterHideSign}]`).forEach((c) => showEle(c, 'sign'))
-    }
-
     /** 仅过滤 div.media-list 的子元素，不扫描全页面 */
     private async checkFilter() {
         if (!this.target) {
+            return
+        }
+
+        const mediaList = this.target.querySelector<HTMLElement>('div.media-list')
+        if (!mediaList) {
             return
         }
 
@@ -125,7 +80,7 @@ class ArticleFilterSearch implements IMainFilter {
         }
         const timer = performance.now()
 
-        const cards = Array.from(this.target.children) as HTMLElement[]
+        const cards = Array.from(mediaList.children) as HTMLElement[]
         const allAuthors = cards.map((c) => selectorFns.author(c)).filter(Boolean)
         logger.log(`ArticleFilterSearch authors on page: [${allAuthors.join(', ')}]`)
         logger.log(
@@ -160,43 +115,32 @@ class ArticleFilterSearch implements IMainFilter {
         logger.debug(`ArticleFilterSearch hide ${blackCnt} in ${cards.length} cards, time=${time}`)
     }
 
+    observe() {
+        logger.log('ArticleFilterSearch observe')
+        waitForEle(document, 'div.search-content', (node: HTMLElement): boolean => {
+            return node.className.includes('search-content')
+        }).then((ele) => {
+            if (!ele) {
+                return
+            }
+
+            logger.log('ArticleFilterSearch div.search-content found')
+            this.target = ele
+            this.checkFilter()
+
+            new MutationObserver(() => {
+                this.checkFilter()
+            }).observe(this.target, { childList: true, subtree: true })
+        })
+    }
+
     /** 兼容 IMainFilter 接口 */
     check(_mode?: 'full' | 'incr') {
-        this.setupMediaList()
+        this.checkFilter()
     }
 
     checkFull() {
-        this.setupMediaList()
-    }
-
-    /** SPA URL 变化时延迟重查 DOM（需等 DOM 更新完再找容器） */
-    private onUrlChange() {
-        this.target = undefined
-        this.mediaObserver?.disconnect()
-        this.mediaObserver = null
-        if (this.watchTimer) {
-            clearTimeout(this.watchTimer)
-            this.watchTimer = null
-        }
-        setTimeout(() => this.setupMediaList(), 0)
-    }
-
-    observe() {
-        logger.log('ArticleFilterSearch observe')
-        this.setupMediaList()
-
-        // 拦截 pushState / replaceState 感知 SPA URL 变化
-        const origPushState = history.pushState.bind(history)
-        history.pushState = (...args) => {
-            origPushState(...args)
-            this.onUrlChange()
-        }
-        const origReplaceState = history.replaceState.bind(history)
-        history.replaceState = (...args) => {
-            origReplaceState(...args)
-            this.onUrlChange()
-        }
-        window.addEventListener('popstate', () => this.onUrlChange())
+        this.checkFilter()
     }
 }
 
