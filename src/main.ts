@@ -5,6 +5,7 @@ import App from './App.vue'
 import { loadModules } from './modules'
 import { toggleDarkMode } from './modules/rules/common/groups/theme'
 import {
+    useArticleFilterPanelStore,
     useCommentFilterPanelStore,
     useDynamicFilterPanelStore,
     useRulePanelStore,
@@ -54,6 +55,7 @@ const menu = () => {
     const videoStore = useVideoFilterPanelStore()
     const commentStore = useCommentFilterPanelStore()
     const dynamicStore = useDynamicFilterPanelStore()
+    const articleStore = useArticleFilterPanelStore()
     const sideBtnStore = useSideBtnStore()
 
     GM_registerMenuCommand('✅ 页面净化优化', () => {
@@ -68,6 +70,17 @@ const menu = () => {
             alert('[bilibili-cleaner] 本页面不支持视频过滤')
         })
     }
+
+    if (articleStore.isPageValid()) {
+        GM_registerMenuCommand('✅ 专栏过滤设置', () => {
+            articleStore.toggle()
+        })
+    } else {
+        GM_registerMenuCommand('🚫 专栏过滤设置', () => {
+            alert('[bilibili-cleaner] 本页面不支持专栏过滤')
+        })
+    }
+
     if (commentStore.isPageValid()) {
         GM_registerMenuCommand('✅ 评论过滤设置', () => {
             commentStore.toggle()
@@ -86,6 +99,7 @@ const menu = () => {
             alert('[bilibili-cleaner] 本页面不支持动态过滤')
         })
     }
+
     GM_registerMenuCommand('⚡ 夜间模式开关', () => {
         toggleDarkMode()
     })
