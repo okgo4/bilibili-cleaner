@@ -5,28 +5,32 @@ import { ContextMenuTargetHandler, FilterContextMenu, IMainFilter, SelectorResul
 import { logger } from '@/utils/logger'
 import { GM_getValue, GM_setValue } from '$'
 import { orderedUniq, showEle, waitForEle } from '@/utils/tool'
-import { ArticleAuthorFilter, ArticleAuthorKeywordFilter } from '../subFilters/black'
-import { ArticleAuthorKeywordWhiteFilter, ArticleAuthorWhiteFilter } from '../subFilters/white'
+import { ArticleAuthorFilter, ArticleAuthorKeywordFilter, ArticleTitleKeywordFilter } from '../subFilters/black'
+import { ArticleAuthorWhiteFilter, ArticleTitleKeywordWhiteFilter } from '../subFilters/white'
 
 const GM_KEYS = {
     black: {
-        author: {
-            statusKey: 'search-article-author-filter-status',
-            valueKey: 'search-article-author-filter-value',
+        uploader: {
+            statusKey: 'search-article-uploader-filter-status',
+            valueKey: 'global-article-uploader-filter-value',
         },
-        authorKeyword: {
-            statusKey: 'search-article-author-keyword-filter-status',
-            valueKey: 'search-article-author-keyword-filter-value',
+        uploaderKeyword: {
+            statusKey: 'search-article-uploader-keyword-filter-status',
+            valueKey: 'global-article-uploader-keyword-filter-value',
+        },
+        title: {
+            statusKey: 'search-article-title-keyword-filter-status',
+            valueKey: 'global-article-title-keyword-filter-value',
         },
     },
     white: {
-        author: {
-            statusKey: 'search-article-author-whitelist-filter-status',
-            valueKey: 'search-article-author-whitelist-filter-value',
+        uploader: {
+            statusKey: 'search-article-uploader-whitelist-filter-status',
+            valueKey: 'global-article-uploader-whitelist-filter-value',
         },
-        authorKeyword: {
-            statusKey: 'search-article-author-keyword-whitelist-filter-status',
-            valueKey: 'search-article-author-keyword-whitelist-filter-value',
+        title: {
+            statusKey: 'search-article-title-keyword-whitelist-filter-status',
+            valueKey: 'global-article-title-keyword-whitelist-filter-value',
         },
     },
 }
@@ -35,6 +39,9 @@ const selectorFns = {
     author: (card: HTMLElement): SelectorResult => {
         return card.querySelector('.atc-author .lh_xs')?.textContent?.trim()
     },
+    title: (card: HTMLElement): SelectorResult => {
+        return card.querySelector('.i_card_title a')?.getAttribute('title')?.trim()
+    },
 }
 
 class ArticleFilterSearch implements IMainFilter {
@@ -42,20 +49,20 @@ class ArticleFilterSearch implements IMainFilter {
     articleAuthorFilter = new ArticleAuthorFilter()
     articleAuthorKeywordFilter = new ArticleAuthorKeywordFilter()
     articleAuthorWhiteFilter = new ArticleAuthorWhiteFilter()
-    articleAuthorKeywordWhiteFilter = new ArticleAuthorKeywordWhiteFilter()
+    articleTitleKeywordFilter = new ArticleTitleKeywordFilter()
+    articleTitleKeywordWhiteFilter = new ArticleTitleKeywordWhiteFilter()
 
     init() {
-        const blacklist = GM_getValue<string[]>(GM_KEYS.black.author.valueKey, [])
-        const keywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.authorKeyword.valueKey, [])
-        const whitelist = GM_getValue<string[]>(GM_KEYS.white.author.valueKey, [])
-        const keywordWhitelist = GM_getValue<string[]>(GM_KEYS.white.authorKeyword.valueKey, [])
-        logger.log(
-            `ArticleFilterSearch init, blacklist=${JSON.stringify(blacklist)}, keyword=${JSON.stringify(keywordBlacklist)}, whitelist=${JSON.stringify(whitelist)}, keywordWhite=${JSON.stringify(keywordWhitelist)}`,
-        )
+        const blacklist = GM_getValue<string[]>(GM_KEYS.black.uploader.valueKey, [])
+        const keywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.uploaderKeyword.valueKey, [])
+        const titleKeywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.title.valueKey, [])
+        const whitelist = GM_getValue<string[]>(GM_KEYS.white.uploader.valueKey, [])
+        const titleKeywordWhitelist = GM_getValue<string[]>(GM_KEYS.white.title.valueKey, [])
         this.articleAuthorFilter.setParam(blacklist)
         this.articleAuthorKeywordFilter.setParam(keywordBlacklist)
+        this.articleTitleKeywordFilter.setParam(titleKeywordBlacklist)
         this.articleAuthorWhiteFilter.setParam(whitelist)
-        this.articleAuthorKeywordWhiteFilter.setParam(keywordWhitelist)
+        this.articleTitleKeywordWhiteFilter.setParam(titleKeywordWhitelist)
     }
 
     /** 仅过滤 div.media-list 的子元素，不扫描全页面 */
@@ -73,19 +80,15 @@ class ArticleFilterSearch implements IMainFilter {
         if (
             !this.articleAuthorFilter.isEnable &&
             !this.articleAuthorKeywordFilter.isEnable &&
+            !this.articleTitleKeywordFilter.isEnable &&
             !this.articleAuthorWhiteFilter.isEnable &&
-            !this.articleAuthorKeywordWhiteFilter.isEnable
+            !this.articleTitleKeywordWhiteFilter.isEnable
         ) {
             revertAll = true
         }
         const timer = performance.now()
 
         const cards = Array.from(mediaList.children) as HTMLElement[]
-        const allAuthors = cards.map((c) => selectorFns.author(c)).filter(Boolean)
-        logger.log(`ArticleFilterSearch authors on page: [${allAuthors.join(', ')}]`)
-        logger.log(
-            `ArticleFilterSearch checkFilter, cards=${cards.length}, revertAll=${revertAll}, black=${this.articleAuthorFilter.isEnable}, keyword=${this.articleAuthorKeywordFilter.isEnable}, white=${this.articleAuthorWhiteFilter.isEnable}`,
-        )
         if (!cards.length) {
             return
         }
@@ -96,7 +99,13 @@ class ArticleFilterSearch implements IMainFilter {
 
         if (config.isDebugMode) {
             cards.forEach((c) => {
-                logger.debug(`ArticleFilterSearch author: ${selectorFns.author(c)}`)
+                logger.debug(
+                    [
+                        `ArticleFilterSearch`,
+                        `author: ${selectorFns.author(c)}`,
+                        `title: ${selectorFns.title(c)}`,
+                    ].join('\n'),
+                )
             })
         }
 
@@ -104,11 +113,13 @@ class ArticleFilterSearch implements IMainFilter {
         this.articleAuthorFilter.isEnable && blackPairs.push([this.articleAuthorFilter, selectorFns.author])
         this.articleAuthorKeywordFilter.isEnable &&
             blackPairs.push([this.articleAuthorKeywordFilter, selectorFns.author])
+        this.articleTitleKeywordFilter.isEnable &&
+            blackPairs.push([this.articleTitleKeywordFilter, selectorFns.title])
 
         const whitePairs: SubFilterPair[] = []
         this.articleAuthorWhiteFilter.isEnable && whitePairs.push([this.articleAuthorWhiteFilter, selectorFns.author])
-        this.articleAuthorKeywordWhiteFilter.isEnable &&
-            whitePairs.push([this.articleAuthorKeywordWhiteFilter, selectorFns.author])
+        this.articleTitleKeywordWhiteFilter.isEnable &&
+            whitePairs.push([this.articleTitleKeywordWhiteFilter, selectorFns.title])
 
         const blackCnt = await coreCheck(cards, true, 'sign', blackPairs, whitePairs)
         const time = (performance.now() - timer).toFixed(1)
@@ -153,12 +164,13 @@ export const articleFilterEntry = async () => {
 
 export const articleFilterGroups: Group[] = [
     {
-        name: '作者过滤',
+        name: 'UP主过滤',
         items: [
             {
                 type: 'switch',
-                id: GM_KEYS.black.author.statusKey,
-                name: '启用 作者过滤',
+                id: GM_KEYS.black.uploader.statusKey,
+                name: '启用 UP主过滤 (右键单击UP主)',
+                defaultEnable: true,
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleAuthorFilter.enable()
@@ -171,25 +183,20 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.black.author.valueKey,
+                id: GM_KEYS.black.uploader.valueKey,
                 name: '编辑 UP主黑名单',
-                description: ['右键屏蔽的作者会出现在首行'],
+                description: ['右键屏蔽的UP主会出现在首行'],
                 editorTitle: 'UP主 黑名单',
                 editorDescription: ['每行一个UP主昵称，保存时自动去重'],
                 saveFn: async () => {
-                    mainFilter.articleAuthorFilter.setParam(GM_getValue(GM_KEYS.black.author.valueKey, []))
+                    mainFilter.articleAuthorFilter.setParam(GM_getValue(GM_KEYS.black.uploader.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
-        ],
-    },
-    {
-        name: '作者昵称关键词过滤',
-        items: [
             {
                 type: 'switch',
-                id: GM_KEYS.black.authorKeyword.statusKey,
-                name: '启用 作者昵称关键词过滤',
+                id: GM_KEYS.black.uploaderKeyword.statusKey,
+                name: '启用 UP主昵称关键词过滤',
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleAuthorKeywordFilter.enable()
@@ -202,9 +209,9 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.black.authorKeyword.valueKey,
-                name: '编辑 作者昵称关键词黑名单',
-                editorTitle: '作者昵称关键词 黑名单',
+                id: GM_KEYS.black.uploaderKeyword.valueKey,
+                name: '编辑 UP主昵称关键词黑名单',
+                editorTitle: 'UP主昵称关键词 黑名单',
                 editorDescription: [
                     '每行一个关键词或正则，不区分大小写、全半角',
                     '请勿使用过于激进的关键词或正则',
@@ -212,8 +219,42 @@ export const articleFilterGroups: Group[] = [
                 ],
                 saveFn: async () => {
                     mainFilter.articleAuthorKeywordFilter.setParam(
-                        GM_getValue(GM_KEYS.black.authorKeyword.valueKey, []),
+                        GM_getValue(GM_KEYS.black.uploaderKeyword.valueKey, []),
                     )
+                    mainFilter.checkFull()
+                },
+            },
+        ],
+    },
+    {
+        name: '标题关键词过滤',
+        items: [
+            {
+                type: 'switch',
+                id: GM_KEYS.black.title.statusKey,
+                name: '启用 标题关键词过滤',
+                noStyle: true,
+                enableFn: () => {
+                    mainFilter.articleTitleKeywordFilter.enable()
+                    mainFilter.checkFull()
+                },
+                disableFn: () => {
+                    mainFilter.articleTitleKeywordFilter.disable()
+                    mainFilter.checkFull()
+                },
+            },
+            {
+                type: 'editor',
+                id: GM_KEYS.black.title.valueKey,
+                name: '编辑 标题关键词黑名单',
+                editorTitle: '标题关键词 黑名单',
+                editorDescription: [
+                    '每行一个关键词或正则，不区分大小写、全半角',
+                    '请勿使用过于激进的关键词或正则',
+                    '正则默认 ius 模式，无需 flag，语法：/abc|\\d+/',
+                ],
+                saveFn: async () => {
+                    mainFilter.articleTitleKeywordFilter.setParam(GM_getValue(GM_KEYS.black.title.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
@@ -224,8 +265,9 @@ export const articleFilterGroups: Group[] = [
         items: [
             {
                 type: 'switch',
-                id: GM_KEYS.white.author.statusKey,
-                name: '启用 作者白名单',
+                id: GM_KEYS.white.uploader.statusKey,
+                name: '启用 UP主白名单 (右键单击UP主)',
+                defaultEnable: true,
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleAuthorWhiteFilter.enable()
@@ -238,39 +280,40 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.white.author.valueKey,
+                id: GM_KEYS.white.uploader.valueKey,
                 name: '编辑 UP主白名单',
                 editorTitle: 'UP主 白名单',
                 editorDescription: ['每行一个UP主昵称，保存时自动去重'],
                 saveFn: async () => {
-                    mainFilter.articleAuthorWhiteFilter.setParam(GM_getValue(GM_KEYS.white.author.valueKey, []))
+                    mainFilter.articleAuthorWhiteFilter.setParam(GM_getValue(GM_KEYS.white.uploader.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
             {
                 type: 'switch',
-                id: GM_KEYS.white.authorKeyword.statusKey,
-                name: '启用 作者昵称关键词白名单',
+                id: GM_KEYS.white.title.statusKey,
+                name: '启用 标题关键词白名单',
                 noStyle: true,
                 enableFn: () => {
-                    mainFilter.articleAuthorKeywordWhiteFilter.enable()
+                    mainFilter.articleTitleKeywordWhiteFilter.enable()
                     mainFilter.checkFull()
                 },
                 disableFn: () => {
-                    mainFilter.articleAuthorKeywordWhiteFilter.disable()
+                    mainFilter.articleTitleKeywordWhiteFilter.disable()
                     mainFilter.checkFull()
                 },
             },
             {
                 type: 'editor',
-                id: GM_KEYS.white.authorKeyword.valueKey,
-                name: '编辑 作者昵称关键词白名单',
-                editorTitle: '作者昵称关键词 白名单',
-                editorDescription: ['每行一个关键词或正则，不区分大小写、全半角'],
+                id: GM_KEYS.white.title.valueKey,
+                name: '编辑 标题关键词白名单',
+                editorTitle: '标题关键词 白名单',
+                editorDescription: [
+                    '每行一个关键词或正则，不区分大小写、全半角',
+                    '正则默认 ius 模式，无需 flag，语法：/abc|\\d+/',
+                ],
                 saveFn: async () => {
-                    mainFilter.articleAuthorKeywordWhiteFilter.setParam(
-                        GM_getValue(GM_KEYS.white.authorKeyword.valueKey, []),
-                    )
+                    mainFilter.articleTitleKeywordWhiteFilter.setParam(GM_getValue(GM_KEYS.white.title.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
@@ -287,39 +330,48 @@ export const articleFilterHandler: ContextMenuTargetHandler = (target: HTMLEleme
     const authorEl = target.closest('.atc-author')
     if (authorEl) {
         const author = authorEl.querySelector('.lh_xs')?.textContent?.trim()
+        const url = authorEl.querySelector<HTMLAnchorElement>('a')?.href?.trim()
+        const spaceUrl = url?.match(/space\.bilibili\.com\/\d+/)?.[0]
+
         if (author) {
             if (mainFilter.articleAuthorFilter.isEnable) {
                 menus.push({
-                    name: `屏蔽作者：${author}`,
+                    name: `屏蔽UP主：${author}`,
                     fn: async () => {
                         try {
                             mainFilter.articleAuthorFilter.addParam(author)
                             mainFilter.checkFull()
-                            const arr: string[] = GM_getValue(GM_KEYS.black.author.valueKey, [])
+                            const arr: string[] = GM_getValue(GM_KEYS.black.uploader.valueKey, [])
                             arr.unshift(author)
-                            GM_setValue(GM_KEYS.black.author.valueKey, orderedUniq(arr))
+                            GM_setValue(GM_KEYS.black.uploader.valueKey, orderedUniq(arr))
                         } catch (err) {
-                            logger.error(`articleFilterHandler add author ${author} failed`, err)
+                            logger.error(`articleFilterHandler add uploader ${author} failed`, err)
                         }
                     },
                 })
             }
             if (mainFilter.articleAuthorWhiteFilter.isEnable) {
                 menus.push({
-                    name: `将作者加入白名单`,
+                    name: `将UP主加入白名单`,
                     fn: async () => {
                         try {
                             mainFilter.articleAuthorWhiteFilter.addParam(author)
                             mainFilter.checkFull()
-                            const arr: string[] = GM_getValue(GM_KEYS.white.author.valueKey, [])
+                            const arr: string[] = GM_getValue(GM_KEYS.white.uploader.valueKey, [])
                             arr.unshift(author)
-                            GM_setValue(GM_KEYS.white.author.valueKey, orderedUniq(arr))
+                            GM_setValue(GM_KEYS.white.uploader.valueKey, orderedUniq(arr))
                         } catch (err) {
-                            logger.error(`articleFilterHandler add white author ${author} failed`, err)
+                            logger.error(`articleFilterHandler add white uploader ${author} failed`, err)
                         }
                     },
                 })
             }
+        }
+        if (spaceUrl && (mainFilter.articleAuthorFilter.isEnable || mainFilter.articleAuthorWhiteFilter.isEnable)) {
+            menus.push({
+                name: `复制主页链接`,
+                fn: () => navigator.clipboard.writeText(`https://${spaceUrl}`),
+            })
         }
     }
 

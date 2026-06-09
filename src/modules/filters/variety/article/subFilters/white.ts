@@ -3,4 +3,4 @@ import { StringFilter } from '@/modules/filters/core/subFilters/stringFilter'
 
 export class ArticleAuthorWhiteFilter extends StringFilter {}
 
-export class ArticleAuthorKeywordWhiteFilter extends KeywordFilter {}
+export class ArticleTitleKeywordWhiteFilter extends KeywordFilter {}
