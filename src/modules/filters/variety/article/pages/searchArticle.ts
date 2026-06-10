@@ -10,13 +10,13 @@ import { ArticleAuthorWhiteFilter, ArticleTitleKeywordWhiteFilter } from '../sub
 
 const GM_KEYS = {
     black: {
-        uploader: {
-            statusKey: 'search-article-uploader-filter-status',
-            valueKey: 'global-article-uploader-filter-value',
+        author: {
+            statusKey: 'search-article-author-filter-status',
+            valueKey: 'global-article-author-filter-value',
         },
-        uploaderKeyword: {
-            statusKey: 'search-article-uploader-keyword-filter-status',
-            valueKey: 'global-article-uploader-keyword-filter-value',
+        authorKeyword: {
+            statusKey: 'search-article-author-keyword-filter-status',
+            valueKey: 'global-article-author-keyword-filter-value',
         },
         title: {
             statusKey: 'search-article-title-keyword-filter-status',
@@ -24,9 +24,9 @@ const GM_KEYS = {
         },
     },
     white: {
-        uploader: {
-            statusKey: 'search-article-uploader-whitelist-filter-status',
-            valueKey: 'global-article-uploader-whitelist-filter-value',
+        author: {
+            statusKey: 'search-article-author-whitelist-filter-status',
+            valueKey: 'global-article-author-whitelist-filter-value',
         },
         title: {
             statusKey: 'search-article-title-keyword-whitelist-filter-status',
@@ -53,10 +53,10 @@ class ArticleFilterSearch implements IMainFilter {
     articleTitleKeywordWhiteFilter = new ArticleTitleKeywordWhiteFilter()
 
     init() {
-        const blacklist = GM_getValue<string[]>(GM_KEYS.black.uploader.valueKey, [])
-        const keywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.uploaderKeyword.valueKey, [])
+        const blacklist = GM_getValue<string[]>(GM_KEYS.black.author.valueKey, [])
+        const keywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.authorKeyword.valueKey, [])
         const titleKeywordBlacklist = GM_getValue<string[]>(GM_KEYS.black.title.valueKey, [])
-        const whitelist = GM_getValue<string[]>(GM_KEYS.white.uploader.valueKey, [])
+        const whitelist = GM_getValue<string[]>(GM_KEYS.white.author.valueKey, [])
         const titleKeywordWhitelist = GM_getValue<string[]>(GM_KEYS.white.title.valueKey, [])
         this.articleAuthorFilter.setParam(blacklist)
         this.articleAuthorKeywordFilter.setParam(keywordBlacklist)
@@ -164,12 +164,12 @@ export const articleFilterEntry = async () => {
 
 export const articleFilterGroups: Group[] = [
     {
-        name: 'UP主过滤',
+        name: '专栏作者过滤',
         items: [
             {
                 type: 'switch',
-                id: GM_KEYS.black.uploader.statusKey,
-                name: '启用 UP主过滤 (右键单击UP主)',
+                id: GM_KEYS.black.author.statusKey,
+                name: '启用 专栏作者过滤 (右键单击专栏作者)',
                 defaultEnable: true,
                 noStyle: true,
                 enableFn: () => {
@@ -183,20 +183,20 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.black.uploader.valueKey,
-                name: '编辑 UP主黑名单',
-                description: ['右键屏蔽的UP主会出现在首行'],
-                editorTitle: 'UP主 黑名单',
-                editorDescription: ['每行一个UP主昵称，保存时自动去重'],
+                id: GM_KEYS.black.author.valueKey,
+                name: '编辑 专栏作者黑名单',
+                description: ['右键屏蔽的专栏作者会出现在首行'],
+                editorTitle: '专栏作者 黑名单',
+                editorDescription: ['每行一个专栏作者昵称，保存时自动去重'],
                 saveFn: async () => {
-                    mainFilter.articleAuthorFilter.setParam(GM_getValue(GM_KEYS.black.uploader.valueKey, []))
+                    mainFilter.articleAuthorFilter.setParam(GM_getValue(GM_KEYS.black.author.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
             {
                 type: 'switch',
-                id: GM_KEYS.black.uploaderKeyword.statusKey,
-                name: '启用 UP主昵称关键词过滤',
+                id: GM_KEYS.black.authorKeyword.statusKey,
+                name: '启用 专栏作者昵称关键词过滤',
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleAuthorKeywordFilter.enable()
@@ -209,9 +209,9 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.black.uploaderKeyword.valueKey,
-                name: '编辑 UP主昵称关键词黑名单',
-                editorTitle: 'UP主昵称关键词 黑名单',
+                id: GM_KEYS.black.authorKeyword.valueKey,
+                name: '编辑 专栏作者昵称关键词黑名单',
+                editorTitle: '专栏作者昵称关键词 黑名单',
                 editorDescription: [
                     '每行一个关键词或正则，不区分大小写、全半角',
                     '请勿使用过于激进的关键词或正则',
@@ -219,7 +219,7 @@ export const articleFilterGroups: Group[] = [
                 ],
                 saveFn: async () => {
                     mainFilter.articleAuthorKeywordFilter.setParam(
-                        GM_getValue(GM_KEYS.black.uploaderKeyword.valueKey, []),
+                        GM_getValue(GM_KEYS.black.authorKeyword.valueKey, []),
                     )
                     mainFilter.checkFull()
                 },
@@ -227,12 +227,12 @@ export const articleFilterGroups: Group[] = [
         ],
     },
     {
-        name: '标题关键词过滤',
+        name: '专栏标题关键词过滤',
         items: [
             {
                 type: 'switch',
                 id: GM_KEYS.black.title.statusKey,
-                name: '启用 标题关键词过滤',
+                name: '启用 专栏标题关键词过滤',
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleTitleKeywordFilter.enable()
@@ -246,8 +246,8 @@ export const articleFilterGroups: Group[] = [
             {
                 type: 'editor',
                 id: GM_KEYS.black.title.valueKey,
-                name: '编辑 标题关键词黑名单',
-                editorTitle: '标题关键词 黑名单',
+                name: '编辑 专栏标题关键词黑名单',
+                editorTitle: '专栏标题关键词 黑名单',
                 editorDescription: [
                     '每行一个关键词或正则，不区分大小写、全半角',
                     '请勿使用过于激进的关键词或正则',
@@ -265,8 +265,8 @@ export const articleFilterGroups: Group[] = [
         items: [
             {
                 type: 'switch',
-                id: GM_KEYS.white.uploader.statusKey,
-                name: '启用 UP主白名单 (右键单击UP主)',
+                id: GM_KEYS.white.author.statusKey,
+                name: '启用 专栏作者白名单 (右键单击专栏作者)',
                 defaultEnable: true,
                 noStyle: true,
                 enableFn: () => {
@@ -280,19 +280,19 @@ export const articleFilterGroups: Group[] = [
             },
             {
                 type: 'editor',
-                id: GM_KEYS.white.uploader.valueKey,
-                name: '编辑 UP主白名单',
-                editorTitle: 'UP主 白名单',
-                editorDescription: ['每行一个UP主昵称，保存时自动去重'],
+                id: GM_KEYS.white.author.valueKey,
+                name: '编辑 专栏作者白名单',
+                editorTitle: '专栏作者 白名单',
+                editorDescription: ['每行一个专栏作者昵称，保存时自动去重'],
                 saveFn: async () => {
-                    mainFilter.articleAuthorWhiteFilter.setParam(GM_getValue(GM_KEYS.white.uploader.valueKey, []))
+                    mainFilter.articleAuthorWhiteFilter.setParam(GM_getValue(GM_KEYS.white.author.valueKey, []))
                     mainFilter.checkFull()
                 },
             },
             {
                 type: 'switch',
                 id: GM_KEYS.white.title.statusKey,
-                name: '启用 标题关键词白名单',
+                name: '启用 专栏标题关键词白名单',
                 noStyle: true,
                 enableFn: () => {
                     mainFilter.articleTitleKeywordWhiteFilter.enable()
@@ -306,8 +306,8 @@ export const articleFilterGroups: Group[] = [
             {
                 type: 'editor',
                 id: GM_KEYS.white.title.valueKey,
-                name: '编辑 标题关键词白名单',
-                editorTitle: '标题关键词 白名单',
+                name: '编辑 专栏标题关键词白名单',
+                editorTitle: '专栏标题关键词 白名单',
                 editorDescription: [
                     '每行一个关键词或正则，不区分大小写、全半角',
                     '正则默认 ius 模式，无需 flag，语法：/abc|\\d+/',
@@ -336,32 +336,32 @@ export const articleFilterHandler: ContextMenuTargetHandler = (target: HTMLEleme
         if (author) {
             if (mainFilter.articleAuthorFilter.isEnable) {
                 menus.push({
-                    name: `屏蔽UP主：${author}`,
+                    name: `屏蔽专栏作者：${author}`,
                     fn: async () => {
                         try {
                             mainFilter.articleAuthorFilter.addParam(author)
                             mainFilter.checkFull()
-                            const arr: string[] = GM_getValue(GM_KEYS.black.uploader.valueKey, [])
+                            const arr: string[] = GM_getValue(GM_KEYS.black.author.valueKey, [])
                             arr.unshift(author)
-                            GM_setValue(GM_KEYS.black.uploader.valueKey, orderedUniq(arr))
+                            GM_setValue(GM_KEYS.black.author.valueKey, orderedUniq(arr))
                         } catch (err) {
-                            logger.error(`articleFilterHandler add uploader ${author} failed`, err)
+                            logger.error(`articleFilterHandler add author ${author} failed`, err)
                         }
                     },
                 })
             }
             if (mainFilter.articleAuthorWhiteFilter.isEnable) {
                 menus.push({
-                    name: `将UP主加入白名单`,
+                    name: `将专栏作者加入白名单`,
                     fn: async () => {
                         try {
                             mainFilter.articleAuthorWhiteFilter.addParam(author)
                             mainFilter.checkFull()
-                            const arr: string[] = GM_getValue(GM_KEYS.white.uploader.valueKey, [])
+                            const arr: string[] = GM_getValue(GM_KEYS.white.author.valueKey, [])
                             arr.unshift(author)
-                            GM_setValue(GM_KEYS.white.uploader.valueKey, orderedUniq(arr))
+                            GM_setValue(GM_KEYS.white.author.valueKey, orderedUniq(arr))
                         } catch (err) {
-                            logger.error(`articleFilterHandler add white uploader ${author} failed`, err)
+                            logger.error(`articleFilterHandler add white author ${author} failed`, err)
                         }
                     },
                 })
