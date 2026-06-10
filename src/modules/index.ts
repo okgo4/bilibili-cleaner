@@ -3,7 +3,7 @@ import { waitForHead } from '@/utils/init'
 import { logger } from '@/utils/logger'
 import { GM_getValue } from '$'
 import { useMagicKeys } from '@vueuse/core'
-import { commentFilters, dynamicFilters, loadFilterStyle, videoFilters } from './filters'
+import { articleFilters, commentFilters, dynamicFilters, loadFilterStyle, videoFilters } from './filters'
 import { loadRuleStyle, rules } from './rules'
 
 const loadSwitchItem = (item: ISwitchItem) => {
@@ -91,7 +91,7 @@ const loadRules = () => {
 
 /** 载入过滤器 */
 const loadFilters = () => {
-    const filters = [...videoFilters, ...commentFilters, ...dynamicFilters]
+    const filters = [...videoFilters, ...commentFilters, ...dynamicFilters, ...articleFilters]
     for (const filter of filters) {
         if (filter.checkFn()) {
             try {
