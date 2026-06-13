@@ -246,6 +246,26 @@ const mainFilter = new VideoFilterHomepage()
 export const videoFilterHomepageEntry = async () => {
     mainFilter.init()
     mainFilter.observe()
+
+    // 首页后缀问题提示
+    window.addEventListener('load', () => {
+        if (
+            location.pathname.startsWith('/index.html') &&
+            (mainFilter.videoBvidFilter.isEnable ||
+                mainFilter.videoDurationFilter.isEnable ||
+                mainFilter.videoViewsFilter.isEnable ||
+                mainFilter.videoTitleFilter.isEnable ||
+                mainFilter.videoUploaderFilter.isEnable ||
+                mainFilter.videoUploaderKeywordFilter.isEnable ||
+                mainFilter.videoPubdateFilter.isEnable)
+        ) {
+            alert(
+                `[bilibili-cleaner] 视频过滤在当前首页不生效
+当前网址包含 index.html 后缀
+请使用无后缀首页 https://www.bilibili.com`,
+            )
+        }
+    })
 }
 
 export const videoFilterHomepageGroups: Group[] = [
