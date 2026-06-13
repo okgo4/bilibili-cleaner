@@ -105,3 +105,18 @@ export const useSideBtnStore = defineStore('SideBtn', () => {
     }
     return { isShow, show, hide, toggle }
 })
+
+export const useArticleFilterPanelStore = defineStore('ArticleFilterPanel', () => {
+    const isShow = ref(false)
+    const show = () => {
+        isShow.value = true
+    }
+    const hide = () => {
+        isShow.value = false
+    }
+    const toggle = () => {
+        isShow.value = !isShow.value
+    }
+    const isPageValid = () => isPageSearch()
+    return { isShow, show, hide, toggle, isPageValid }
+})

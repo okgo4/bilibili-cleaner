@@ -151,6 +151,23 @@ export const videoPlayerLayoutItems: Item[] = [
                         .catch(() => {})
                 }
             }, 100)
+            // 修复方向键默认不调音量问题，在用户按上下方向键时聚焦一下player，对自动连播生效
+            document.addEventListener(
+                'keydown',
+                (e) => {
+                    if (isWebScreen() && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                        const target = e.target as HTMLElement
+                        if (
+                            target &&
+                            (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+                        ) {
+                            return
+                        }
+                        document.querySelector<HTMLElement>('#bilibili-player .bpx-player-dm-root')?.click()
+                    }
+                },
+                true,
+            )
         },
     },
     {

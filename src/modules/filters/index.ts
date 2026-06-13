@@ -42,6 +42,7 @@ import {
 import { videoFilterSearchEntry, videoFilterSearchGroups, videoFilterSearchHandler } from './variety/video/pages/search'
 import { videoFilterSpaceEntry, videoFilterSpaceGroups, videoFilterSpaceHandler } from './variety/video/pages/space'
 import { videoFilterVideoEntry, videoFilterVideoGroups, videoFilterVideoHandler } from './variety/video/pages/video'
+import { articleFilterEntry, articleFilterGroups, articleFilterHandler } from './variety/article'
 
 /** 视频过滤器 */
 export const videoFilters: Filter[] = [
@@ -115,6 +116,16 @@ export const dynamicFilters: Filter[] = [
     },
 ]
 
+/** 专栏过滤器 */
+export const articleFilters: Filter[] = [
+    {
+        name: '搜索页 专栏过滤',
+        groups: articleFilterGroups,
+        entry: articleFilterEntry,
+        checkFn: isPageSearch,
+    },
+]
+
 /** 载入过滤器样式 */
 export const loadFilterStyle = () => {
     const style = document.createElement('style')
@@ -133,4 +144,5 @@ export const filterContextMenuHandlers = [
     videoFilterSpaceHandler,
     dynamicFilterDynamicHandler,
     commentFilterCommonHandler,
+    articleFilterHandler,
 ]

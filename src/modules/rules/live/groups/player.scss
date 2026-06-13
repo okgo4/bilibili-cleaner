@@ -12,6 +12,13 @@ html[live-page-head-web-player-shop-popover-vm] {
     }
 }
 
+// 隐藏 播放器内sticker
+html[live-page-web-player-interactive-sticker] {
+    #interactive-sticker-vm {
+        display: none !important;
+    }
+}
+
 // 隐藏 直播PK特效
 html[live-page-head-web-player-awesome-pk-vm] {
     #pk-vm,
@@ -43,6 +50,9 @@ html[live-page-hide-web-player-background] {
     #fullscreen-container {
         --first-frame-bg: unset !important;
     }
+    .pure_room_root #live-player {
+        background-color: black !important;
+    }
 }
 
 // 隐藏 滚动礼物通告
@@ -71,8 +81,7 @@ html[live-page-head-web-player-live-lottery] {
     #anchor-guest-box-id {
         display: none !important;
     }
-    .m-nobar__popup-container:has(iframe[src^="https://live.bilibili.com/p/html/live-lottery/lottery-user.html"])
-    {
+    .m-nobar__popup-container:has(iframe[src^='https://live.bilibili.com/p/html/live-lottery/lottery-user.html']) {
         display: none !important;
     }
 }

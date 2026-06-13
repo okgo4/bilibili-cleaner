@@ -15,6 +15,11 @@ export const livePlayerItems: Item[] = [
     },
     {
         type: 'switch',
+        id: 'live-page-web-player-interactive-sticker',
+        name: '隐藏 播放器内sticker',
+    },
+    {
+        type: 'switch',
         id: 'live-page-head-web-player-awesome-pk-vm',
         name: '隐藏 直播PK特效',
     },

@@ -5,6 +5,26 @@ html[live-page-sidebar-vm] {
     }
 }
 
+// 禁用 播放器皮肤
+html[live-page-default-skin] {
+    #control-panel-ctnr-box .icon-left-part svg {
+        &:hover path {
+            fill: #00aeec;
+        }
+        path {
+            fill: #c9ccd0;
+        }
+    }
+    &[lab-style='dark'] #control-panel-ctnr-box .icon-left-part svg {
+        &:hover path {
+            fill: #00aeec;
+        }
+        path {
+            fill: #46494d;
+        }
+    }
+}
+
 // 禁用 直播背景
 html[live-page-remove-wallpaper] {
     .room-bg {
