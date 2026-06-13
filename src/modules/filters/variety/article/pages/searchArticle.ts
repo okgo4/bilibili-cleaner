@@ -100,11 +100,9 @@ class ArticleFilterSearch implements IMainFilter {
         if (config.isDebugMode) {
             cards.forEach((c) => {
                 logger.debug(
-                    [
-                        `ArticleFilterSearch`,
-                        `author: ${selectorFns.author(c)}`,
-                        `title: ${selectorFns.title(c)}`,
-                    ].join('\n'),
+                    [`ArticleFilterSearch`, `author: ${selectorFns.author(c)}`, `title: ${selectorFns.title(c)}`].join(
+                        '\n',
+                    ),
                 )
             })
         }
@@ -113,8 +111,7 @@ class ArticleFilterSearch implements IMainFilter {
         this.articleAuthorFilter.isEnable && blackPairs.push([this.articleAuthorFilter, selectorFns.author])
         this.articleAuthorKeywordFilter.isEnable &&
             blackPairs.push([this.articleAuthorKeywordFilter, selectorFns.author])
-        this.articleTitleKeywordFilter.isEnable &&
-            blackPairs.push([this.articleTitleKeywordFilter, selectorFns.title])
+        this.articleTitleKeywordFilter.isEnable && blackPairs.push([this.articleTitleKeywordFilter, selectorFns.title])
 
         const whitePairs: SubFilterPair[] = []
         this.articleAuthorWhiteFilter.isEnable && whitePairs.push([this.articleAuthorWhiteFilter, selectorFns.author])
@@ -129,7 +126,7 @@ class ArticleFilterSearch implements IMainFilter {
     observe() {
         logger.log('ArticleFilterSearch observe')
         waitForEle(document, 'div.search-content', (node: HTMLElement): boolean => {
-            return node.className.includes('search-content')
+            return node.classList && node.classList.contains('search-content')
         }).then((ele) => {
             if (!ele) {
                 return

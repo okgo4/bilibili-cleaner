@@ -248,7 +248,7 @@ export const videoFilterHomepageEntry = async () => {
     mainFilter.observe()
 
     // 首页后缀问题提示
-    window.addEventListener('load', () => {
+    const checkHomepageSuffix = () => {
         if (
             location.pathname.startsWith('/index.html') &&
             (mainFilter.videoBvidFilter.isEnable ||
@@ -260,12 +260,15 @@ export const videoFilterHomepageEntry = async () => {
                 mainFilter.videoPubdateFilter.isEnable)
         ) {
             alert(
-                `[bilibili-cleaner] 视频过滤在当前首页不生效
-当前网址包含 index.html 后缀
-请使用无后缀首页 https://www.bilibili.com`,
+                `[bilibili-cleaner] 视频过滤在当前首页不生效\n当前网址包含 index.html 后缀\n请使用无后缀首页 https://www.bilibili.com/`,
             )
         }
-    })
+    }
+    if (document.readyState === 'complete') {
+        checkHomepageSuffix()
+    } else {
+        window.addEventListener('load', checkHomepageSuffix)
+    }
 }
 
 export const videoFilterHomepageGroups: Group[] = [
