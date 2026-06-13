@@ -71,16 +71,6 @@ const menu = () => {
         })
     }
 
-    if (articleStore.isPageValid()) {
-        GM_registerMenuCommand('✅ 专栏过滤设置', () => {
-            articleStore.toggle()
-        })
-    } else {
-        GM_registerMenuCommand('🚫 专栏过滤设置', () => {
-            alert('[bilibili-cleaner] 本页面不支持专栏过滤')
-        })
-    }
-
     if (commentStore.isPageValid()) {
         GM_registerMenuCommand('✅ 评论过滤设置', () => {
             commentStore.toggle()
@@ -97,6 +87,16 @@ const menu = () => {
     } else {
         GM_registerMenuCommand('🚫 动态过滤设置', () => {
             alert('[bilibili-cleaner] 本页面不支持动态过滤')
+        })
+    }
+
+    if (articleStore.isPageValid()) {
+        GM_registerMenuCommand('✅ 专栏过滤设置', () => {
+            articleStore.toggle()
+        })
+    } else {
+        GM_registerMenuCommand('🚫 专栏过滤设置', () => {
+            alert('[bilibili-cleaner] 本页面不支持专栏过滤')
         })
     }
 
