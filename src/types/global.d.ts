@@ -2,7 +2,6 @@ export declare global {
     interface Window {
         isWide?: boolean
         __INITIAL_STATE__?: {
-            aid?: number
             related?: {
                 bvid?: string
             }[]
