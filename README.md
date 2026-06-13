@@ -33,7 +33,6 @@
 - Edge 打开网址 `edge://extensions/`，在左侧启用 "开发人员模式"，重启浏览器
 - Firefox 无需操作
 - Chrome 操作如图
-
     1. 右键单击脚本管理器（暴力猴/篡改猴/脚本猫）
     2. 点击 "管理扩展程序"
     3. 若出现 "允许运行用户脚本" 选项，启用它
@@ -140,10 +139,10 @@
 | 脚本管理器                                                 | 是否支持 | MV3 标准 | 备注                             |
 | ---------------------------------------------------------- | -------- | -------- | -------------------------------- |
 | [Tampermonkey (篡改猴)](https://www.tampermonkey.net/)     | ✔️       | ✔️       | 完全测试，推荐                   |
-| [Violentmonkey (暴力猴)](https://violentmonkey.github.io/) | ✔️       | ❌️      | 完全测试，高版本 Chrome 无法运行 |
+| [Violentmonkey (暴力猴)](https://violentmonkey.github.io/) | ✔️       | ❌️       | 完全测试，高版本 Chrome 无法运行 |
 | [ScriptCat (脚本猫)](https://docs.scriptcat.org/)          | ✔️       | ✔️       | 部分测试                         |
-| Greasemonkey                                               | ❌️      | ❌️      | 未测试                           |
-| Stay                                                       | ❌️      | ❌️      | 无法运行                         |
+| Greasemonkey                                               | ❌️       | ❌️       | 未测试                           |
+| Stay                                                       | ❌️       | ❌️       | 无法运行                         |
 
 ## 净化效果对比
 
@@ -172,7 +171,6 @@
 - 绝大多数功能兼容，小部分功能重复，均不会产生崩坏
 
 - **隐藏首页banner**
-
     - 使用「Evolved 夜间模式」时，开启 Evolved 的「隐藏顶部横幅」，关闭本脚本的「隐藏 banner」
     - 使用「Evolved 顶栏」时，开启 Evolved 的「隐藏顶部横幅」，关闭本脚本的「隐藏 banner」
     - 不使用「Evolved 顶栏」时，关闭 Evolved 的「隐藏顶部横幅」，开启本脚本的「隐藏 banner」
@@ -255,19 +253,16 @@
 <br>
 
 - 分支介绍
-
     - main 分支只用于发布测试版和稳定版
     - dev 分支用于开发，可 PR 到本分支
     - release 分支由 CI 管理，用于存储 Github/JSDelivr 源
 
 - 环境要求
-
     - node.js >= 24
-    - pnpm >= 11.0
+    - pnpm >= 11.6
     - 使用新版 Chrome / Edge / Firefox，安装 tampermonkey 或 violentmonkey
 
 - 编译运行
-
     1. clone 项目，`pnpm i` 安装依赖
     2. 使用 `pnpm dev` 进入 dev 模式，会自动打开浏览器安装开发用脚本（由 vite-plugin-monkey 控制）
         - dev 模式下，修改 vue/scss 代码并保存时可实时生效，修改 typescript 会触发页面自动刷新
