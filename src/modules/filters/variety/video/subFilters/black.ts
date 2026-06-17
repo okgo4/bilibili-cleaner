@@ -21,3 +21,5 @@ export class VideoUploaderFilter extends StringFilter {}
 export class VideoUploaderKeywordFilter extends KeywordFilter {}
 
 export class VideoViewsFilter extends NumberMinFilter {}
+
+export { VideoUploaderStatFilter } from './upStatFilter'

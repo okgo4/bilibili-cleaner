@@ -1,5 +1,11 @@
 export type SelectorResult = string | boolean | number | undefined
-export type SubFilterType = BooleanFilter | StringFilter | KeywordFilter | NumberMinFilter | NumberMaxFilter
+export type SubFilterType =
+    | BooleanFilter
+    | StringFilter
+    | KeywordFilter
+    | NumberMinFilter
+    | NumberMaxFilter
+    | VideoUploaderStatFilter
 export type SelectorFn = (el: HTMLElement) => SelectorResult
 export type SubFilterPair = [SubFilterType, SelectorFn]
 

@@ -12,6 +12,7 @@ import {
     VideoTitleFilter,
     VideoUploaderFilter,
     VideoUploaderKeywordFilter,
+    VideoUploaderStatFilter,
 } from '../subFilters/black'
 import { VideoTitleWhiteFilter, VideoUploaderWhiteFilter } from '../subFilters/white'
 
@@ -36,6 +37,11 @@ const GM_KEYS = {
         title: {
             statusKey: 'search-title-keyword-filter-status',
             valueKey: 'global-title-keyword-filter-value',
+        },
+        upStat: {
+            statusKey: 'search-upstat-filter-status',
+            minVideoKey: 'global-upstat-min-video-value',
+            maxRatioKey: 'global-upstat-max-ratio-value',
         },
     },
     white: {
@@ -74,6 +80,14 @@ const selectorFns = {
     uploaderCard: (userCard: HTMLElement): SelectorResult => {
         return userCard.querySelector('.user-name')?.textContent?.trim()
     },
+    mid: (video: HTMLElement): SelectorResult => {
+        const href = video.querySelector('.bili-video-card__info--owner')?.getAttribute('href')
+        if (href) {
+            const match = href.match(/space\.bilibili\.com\/(\d+)/)
+            return match ? match[1] : undefined
+        }
+        return undefined
+    },
 }
 
 class VideoFilterSearch implements IMainFilter {
@@ -85,6 +99,7 @@ class VideoFilterSearch implements IMainFilter {
     videoTitleFilter = new VideoTitleFilter()
     videoUploaderFilter = new VideoUploaderFilter()
     videoUploaderKeywordFilter = new VideoUploaderKeywordFilter()
+    videoUploaderStatFilter = new VideoUploaderStatFilter()
 
     // 白名单
     videoUploaderWhiteFilter = new VideoUploaderWhiteFilter()
@@ -97,6 +112,8 @@ class VideoFilterSearch implements IMainFilter {
         this.videoTitleFilter.setParam(GM_getValue(GM_KEYS.black.title.valueKey, []))
         this.videoUploaderFilter.setParam(GM_getValue(GM_KEYS.black.uploader.valueKey, []))
         this.videoUploaderKeywordFilter.setParam(GM_getValue(GM_KEYS.black.uploaderKeyword.valueKey, []))
+        this.videoUploaderStatFilter.setMinVideoCount(GM_getValue(GM_KEYS.black.upStat.minVideoKey, 100))
+        this.videoUploaderStatFilter.setMaxRatio(GM_getValue(GM_KEYS.black.upStat.maxRatioKey, 2.0))
         // 白名单
         this.videoUploaderWhiteFilter.setParam(GM_getValue(GM_KEYS.white.uploader.valueKey, []))
         this.videoTitleWhiteFilter.setParam(GM_getValue(GM_KEYS.white.title.valueKey, []))
@@ -113,7 +130,8 @@ class VideoFilterSearch implements IMainFilter {
                 this.videoDurationFilter.isEnable ||
                 this.videoTitleFilter.isEnable ||
                 this.videoUploaderFilter.isEnable ||
-                this.videoUploaderKeywordFilter.isEnable
+                this.videoUploaderKeywordFilter.isEnable ||
+                this.videoUploaderStatFilter.isEnable
             )
         ) {
             revertAll = true
@@ -157,6 +175,7 @@ class VideoFilterSearch implements IMainFilter {
         this.videoUploaderFilter.isEnable && blackPairs.push([this.videoUploaderFilter, selectorFns.uploader])
         this.videoUploaderKeywordFilter.isEnable &&
             blackPairs.push([this.videoUploaderKeywordFilter, selectorFns.uploader])
+        this.videoUploaderStatFilter.isEnable && blackPairs.push([this.videoUploaderStatFilter, selectorFns.mid])
 
         const whitePairs: SubFilterPair[] = []
         this.videoUploaderWhiteFilter.isEnable && whitePairs.push([this.videoUploaderWhiteFilter, selectorFns.uploader])
@@ -354,6 +373,63 @@ export const videoFilterSearchGroups: Group[] = [
                     mainFilter.videoUploaderKeywordFilter.setParam(
                         GM_getValue(GM_KEYS.black.uploaderKeyword.valueKey, []),
                     )
+                    mainFilter.checkFull()
+                },
+            },
+        ],
+    },
+    {
+        name: '营销号过滤',
+        items: [
+            {
+                type: 'switch',
+                id: GM_KEYS.black.upStat.statusKey,
+                name: '启用 营销号过滤',
+                description: [
+                    '根据UP主的视频数和粉丝数比值筛选',
+                    '同时满足「视频数 > 最低视频数」和「视频数/粉丝数 > 最大比值」时屏蔽',
+                    '需要联网获取UP主数据，检测速度较慢',
+                ],
+                noStyle: true,
+                enableFn: () => {
+                    mainFilter.videoUploaderStatFilter.enable()
+                    mainFilter.checkFull()
+                },
+                disableFn: () => {
+                    mainFilter.videoUploaderStatFilter.disable()
+                    mainFilter.checkFull()
+                },
+            },
+            {
+                type: 'number',
+                id: GM_KEYS.black.upStat.minVideoKey,
+                name: '最低视频数（0~5000）',
+                noStyle: true,
+                minValue: 0,
+                maxValue: 5000,
+                step: 10,
+                defaultValue: 100,
+                disableValue: 0,
+                addonText: '个',
+                fn: (value: number) => {
+                    mainFilter.videoUploaderStatFilter.setMinVideoCount(value)
+                    mainFilter.checkFull()
+                },
+            },
+            {
+                type: 'number',
+                id: GM_KEYS.black.upStat.maxRatioKey,
+                name: '最大视频/粉丝比（0.1~10）',
+                description: ['视频数/粉丝数超过此比值将被屏蔽', '例：1.0 表示视频数超过粉丝数'],
+                noStyle: true,
+                minValue: 0.1,
+                maxValue: 10,
+                step: 0.1,
+                defaultValue: 2.0,
+                disableValue: 10,
+                addonText: '',
+                fn: (value: number) => {
+                    mainFilter.videoUploaderStatFilter.setMaxRatio(value)
                     mainFilter.checkFull()
                 },
             },
